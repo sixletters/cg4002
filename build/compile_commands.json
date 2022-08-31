@@ -1,0 +1,12 @@
+[
+{
+  "directory": "/Users/harrismaung/Desktop/schoolModules/cg4002/build/server",
+  "command": "/usr/local/bin/g++-11   -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -std=gnu++11 -o CMakeFiles/server.dir/server.cpp.o -c /Users/harrismaung/Desktop/schoolModules/cg4002/Socketprogramming/server/server.cpp",
+  "file": "/Users/harrismaung/Desktop/schoolModules/cg4002/Socketprogramming/server/server.cpp"
+},
+{
+  "directory": "/Users/harrismaung/Desktop/schoolModules/cg4002/build/client",
+  "command": "/usr/local/bin/g++-11   -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -std=gnu++11 -o CMakeFiles/client.dir/client.cpp.o -c /Users/harrismaung/Desktop/schoolModules/cg4002/Socketprogramming/client/client.cpp",
+  "file": "/Users/harrismaung/Desktop/schoolModules/cg4002/Socketprogramming/client/client.cpp"
+}
+]

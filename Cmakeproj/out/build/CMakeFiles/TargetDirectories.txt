@@ -1,0 +1,6 @@
+/Users/harrismaung/Desktop/schoolmodules/cg4002/Cmakeproj/out/build/CMakeFiles/rebuild_cache.dir
+/Users/harrismaung/Desktop/schoolmodules/cg4002/Cmakeproj/out/build/CMakeFiles/edit_cache.dir
+/Users/harrismaung/Desktop/schoolmodules/cg4002/Cmakeproj/out/build/CMakeFiles/tutorial.dir
+/Users/harrismaung/Desktop/schoolmodules/cg4002/Cmakeproj/out/build/Adder/CMakeFiles/rebuild_cache.dir
+/Users/harrismaung/Desktop/schoolmodules/cg4002/Cmakeproj/out/build/Adder/CMakeFiles/edit_cache.dir
+/Users/harrismaung/Desktop/schoolmodules/cg4002/Cmakeproj/out/build/Adder/CMakeFiles/adder.dir

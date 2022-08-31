@@ -1,0 +1,8 @@
+/Users/harrismaung/Desktop/schoolModules/cg4002/build/CMakeFiles/rebuild_cache.dir
+/Users/harrismaung/Desktop/schoolModules/cg4002/build/CMakeFiles/edit_cache.dir
+/Users/harrismaung/Desktop/schoolModules/cg4002/build/server/CMakeFiles/rebuild_cache.dir
+/Users/harrismaung/Desktop/schoolModules/cg4002/build/server/CMakeFiles/edit_cache.dir
+/Users/harrismaung/Desktop/schoolModules/cg4002/build/server/CMakeFiles/server.dir
+/Users/harrismaung/Desktop/schoolModules/cg4002/build/client/CMakeFiles/rebuild_cache.dir
+/Users/harrismaung/Desktop/schoolModules/cg4002/build/client/CMakeFiles/edit_cache.dir
+/Users/harrismaung/Desktop/schoolModules/cg4002/build/client/CMakeFiles/client.dir

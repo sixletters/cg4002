@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/harrismaung/Desktop/schoolModules/cg4002/socketprogramming/server/server.cpp
+stdio.h
+-
+netdb.h
+-
+netinet/in.h
+-
+stdlib.h
+-
+string.h
+-
+sys/socket.h
+-
+iostream
+-
+sys/types.h
+-
+unistd.h
+-
+

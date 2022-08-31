@@ -1,0 +1,8 @@
+/Users/harrismaung/Desktop/schoolModules/cg4002/socketprogramming/out/build/CMakeFiles/rebuild_cache.dir
+/Users/harrismaung/Desktop/schoolModules/cg4002/socketprogramming/out/build/CMakeFiles/edit_cache.dir
+/Users/harrismaung/Desktop/schoolModules/cg4002/socketprogramming/out/build/server/CMakeFiles/rebuild_cache.dir
+/Users/harrismaung/Desktop/schoolModules/cg4002/socketprogramming/out/build/server/CMakeFiles/edit_cache.dir
+/Users/harrismaung/Desktop/schoolModules/cg4002/socketprogramming/out/build/server/CMakeFiles/server.dir
+/Users/harrismaung/Desktop/schoolModules/cg4002/socketprogramming/out/build/client/CMakeFiles/rebuild_cache.dir
+/Users/harrismaung/Desktop/schoolModules/cg4002/socketprogramming/out/build/client/CMakeFiles/edit_cache.dir
+/Users/harrismaung/Desktop/schoolModules/cg4002/socketprogramming/out/build/client/CMakeFiles/client.dir
