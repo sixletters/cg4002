@@ -8,8 +8,10 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #define PORT 8080
+#define MAX 80
 #define _TEXT(x)    __T(x)
 
+void func(int sockfd);
 int main(){
     int sockfd, connfd;
     struct sockaddr_in server;
@@ -36,7 +38,17 @@ int main(){
     }else{
         std::cout<<"Connected to the server..\n";
     }
+    func(sockfd);
+}
 
+void func(int sockfd)
+{
+    char buff[MAX];
+    int n;
+    bzero(buff, sizeof(buff));
+    printf("Enter the string : ");
+    n = 0;
+    while ((buff[n++] = getchar()) != '\n');
+    send(sockfd, &buff, sizeof(buff),0);
     close(sockfd);
-
 }

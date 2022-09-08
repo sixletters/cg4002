@@ -42,6 +42,15 @@
 				"major" : 2,
 				"minor" : 0
 			}
+		},
+		{
+			"jsonFile" : "cmakeFiles-v1-40cdc777af3608cf3760.json",
+			"kind" : "cmakeFiles",
+			"version" : 
+			{
+				"major" : 1,
+				"minor" : 0
+			}
 		}
 	],
 	"reply" : 
@@ -62,6 +71,10 @@
 					},
 					{
 						"kind" : "toolchains",
+						"version" : 1
+					},
+					{
+						"kind" : "cmakeFiles",
 						"version" : 1
 					}
 				],
@@ -87,6 +100,15 @@
 					},
 					{
 						"error" : "unknown request kind 'toolchains'"
+					},
+					{
+						"jsonFile" : "cmakeFiles-v1-40cdc777af3608cf3760.json",
+						"kind" : "cmakeFiles",
+						"version" : 
+						{
+							"major" : 1,
+							"minor" : 0
+						}
 					}
 				]
 			}

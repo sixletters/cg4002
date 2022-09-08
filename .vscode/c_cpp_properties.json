@@ -4,7 +4,8 @@
             "name": "Mac",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/local/Cellar/gcc/11.1.0_1/include/c++/11.1.0/tr1"
+                "/usr/local/Cellar/gcc/11.1.0_1/include/c++/11.1.0/tr1",
+                "${workspaceFolder}/Ultra96"
             ],
             "defines": [],
             "macFrameworkPath": [],
