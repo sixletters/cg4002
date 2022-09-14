@@ -6,7 +6,8 @@ tempDataMap = {
     "reload": "2",
     "activate": "3",
     "shoot": "4",
-    "exit": "5"
+    "exit": "5",
+    "grenade": "6"
 }
 
 if __name__ == '__main__':
