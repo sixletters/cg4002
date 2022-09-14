@@ -1,0 +1,10 @@
+ssh -L [laptopPort]:192.168.95.224:[ultra96Port] [user]@stu.comp.nus.edu.sg \
+e.g. \
+ssh -L 8080:192.168.95.224:8080 e0406779@stu.comp.nus.edu.sg
+
+also works
+
+On the laptop: \
+ssh -L 8080:localhost:8080 harrismaung@stu.comp.nus.edu.sg\
+On Sunfire: \
+ssh -L 8080:localhost:8080 xilinx@192.168.95.224

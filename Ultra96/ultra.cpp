@@ -17,7 +17,7 @@
 #define BACKLOG 10
 #define size_t socklen_t
 
-void *requestHandler(void *arguments);
+void *requestHandler(void * input);
 void * receiverThreadFn(void *arg);
 void * senderThread();
 struct beetleRawData{
@@ -25,8 +25,8 @@ struct beetleRawData{
 };
 
 struct arg_struct {
-    int arg1;
-    int arg2;
+    int sockfd;
+    int connfd;
 };
 
 
@@ -87,7 +87,8 @@ void * receiverThreadFn(void *arg){
     while (1)
 	{
 		printf("waiting for data\n");
-		connfd = accept(sockfd, (struct sockaddr *) &client, &len);           //accept the packet
+		connfd = accept(sockfd, (struct sockaddr *) &client, &len);
+         //accept the packet
 		if(connfd < 0){
             std::cout<<"Server acceptance Failed";
             pthread_exit((void*) "Exit");
@@ -96,28 +97,34 @@ void * receiverThreadFn(void *arg){
         };
 
         // struct arg_struct args;
-        // args.arg1 = sockfd;
-        // args.arg2 = connfd;
-        pid_t pid;
-        if((pid = fork()) == 0){
-            requestHandler(sockfd, connfd)
-        }
-
+        // args.sockfd = sockfd;
+        // args.connfd = connfd;;
+        // pid_t pid;
+        // if((pid = fork()) == 0){
+        //     close(sockfd);
+        //     requestHandler(sockfd, connfd);
+        //     close(connfd);
+        //     exit(0);
+        // }
+        close(sockfd);
+        close(connfd);
+    
         // int ret;
         // pthread_t handlerThread;
         // void * ret_join;
-        // ret = pthread_create(&handlerThread, NULL, &requestHandler, (void *)&args);                                       //receive packet and response      
+        // ret = pthread_create(&handlerThread, NULL, &requestHandler, (void *)&args); 
+        // pthread_join(handlerThread, ret_join);
 	}
 
     close(sockfd);
     pthread_exit((void*) EXIT_FAILURE);
 };
 
-void* requestHandler(int sockfd, int connfd)
+void* requestHandler(void * input)
 {   
-    // struct arg_struct *args = arguments;
-    // socklen_t sockfd = args->arg1;
-    // socklen_t connfd = args->arg2;
+    socklen_t sockfd = ((struct arg_struct*)input)->sockfd;
+    socklen_t connfd = ((struct arg_struct*)input)->connfd;
+    std::cout<<sockfd;
 
     close(sockfd);
 	char buf[BUFSIZE];
@@ -155,4 +162,5 @@ void* requestHandler(int sockfd, int connfd)
 	std::cout<<buf;
 	std::cout<<"a file has been successfully received!\nthe total data received is " << (int)lseek << "\n";
     close(connfd);
+    pthread_exit((void*) "Exit");
 }

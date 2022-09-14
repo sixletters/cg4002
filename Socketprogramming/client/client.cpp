@@ -43,10 +43,9 @@ int main(){
 
 void func(int sockfd)
 {
-    char buff[MAX];
+    char buff[MAX] = "DATA\0";
     int n;
     bzero(buff, sizeof(buff));
-    printf("Enter the string : ");
     n = 0;
     while ((buff[n++] = getchar()) != '\n');
     send(sockfd, &buff, sizeof(buff),0);
