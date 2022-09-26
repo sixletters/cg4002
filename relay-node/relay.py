@@ -1,6 +1,4 @@
 import socket
-
-from Ultra96-python.ultra import receiverProcess
 HOST = "0.0.0.0"
 MYTCP_PORT = 8080
 import multiprocessing as mp
@@ -33,9 +31,9 @@ def internalComms(dataBuffer,lock):
 if __name__ == '__main__':
     dataBuffer = mp.Queue()
     lock = mp.Lock()
-    relay = mp.Process(target=receiverProcess, args=(dataBuffer, lock))
+    relay = mp.Process(target=relayProcess, args=(dataBuffer, lock))
     internalComms = mp.process(target=internalComms, args=(dataBuffer, lock))
     relay.start()
     internalComms.start()
-    relay.join
-    internalComms.join
+    relay.join()
+    internalComms.join()
