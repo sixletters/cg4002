@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #define MAX 80
-#define PORT 8080
+#define PORT 8090
 #define SA struct sockaddr
 #define BACKLOG 10
 #define size_t socklen_t
@@ -44,18 +44,35 @@ int main(){
     }else{
         std::cout<< "Listening...";
     };
-
-    len = sizeof(client);
-    connfd = accept(sockfd, (struct sockaddr *) &client, &len);
-
-    if(connfd < 0){
-        std::cout<<"Server acceptance Failed";
-        return 0;
-    }else{
-        std::cout<<"Server has accepted the client...\n";
-    };
-
+    while(true){
+        std::cout<< "LISTENING";
+        len = sizeof(client);
+        connfd = accept(sockfd, (struct sockaddr *) &client, &len);
+        while(!end)
+	    {
+		if ((n= recv(connfd, &recvs, DATALEN, 0))==-1)                                   //receive the packet
+		{
+			printf("error when receiving\n");
+			exit(1);
+		}
+		if (recvs[n-1] == '\0')									//if it is the end of the file
+		{
+			end = 1;
+			n --;
+		}
+		memcpy((buf+lseek), recvs, n);
+		lseek += n;
+	    }
+        if(connfd < 0){
+            std::cout<<"Server acceptance Failed";
+            return 0;
+        }else{
+            std::cout<<"Server has accepted the client...\n";
+        };
+        close(connfd);
+    }
     close(sockfd);
+
     exit(0);
 
 }

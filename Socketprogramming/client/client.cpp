@@ -7,7 +7,7 @@
 #define _OPEN_SYS_SOCK_IPV6
 #include <arpa/inet.h>
 #include <unistd.h>
-#define PORT 8080
+#define PORT 8090
 #define MAX 80
 #define _TEXT(x)    __T(x)
 
@@ -39,6 +39,7 @@ int main(){
         std::cout<<"Connected to the server..\n";
     }
     func(sockfd);
+    close(sockfd);
 }
 
 void func(int sockfd)
@@ -49,5 +50,4 @@ void func(int sockfd)
     n = 0;
     while ((buff[n++] = getchar()) != '\n');
     send(sockfd, &buff, sizeof(buff),0);
-    close(sockfd);
 }

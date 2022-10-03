@@ -151,6 +151,7 @@ void* requestHandler(void * input)
 		memcpy((buf+lseek), recvs, n);
 		lseek += n;
 	}
+    
 	ack.num = 1;
 	ack.len = 0;
 	if ((n = send(connfd, &ack, 2, 0))==-1)
