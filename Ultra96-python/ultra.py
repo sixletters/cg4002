@@ -9,6 +9,8 @@ import base64
 from Cryptodome.Random import get_random_bytes
 from Crypto.Util.Padding import pad
 import threading
+import time
+import action
 
 MYTCP_PORT = 8080
 EVAL_HOST = "127.0.0.1"  # The server's hostname or IP address
@@ -28,11 +30,11 @@ def deserialize(bytestream):
     print(bytestream)
 
 ## Parses the payload of the data to an action
-def payloadParser(data, playerActionBuffer, playerMutex):
-    action = "some action"
+def payloadParser(data, playerActionBuffer):
+    currPlayer = data["playerID"]
     if data["beetleID"] == 0:
         print("HANDLE SENSOR")
-    elif data["beetleID"] == 0:
+    elif data["beetleID"] == 1:
         print("HANDLE GUN")
     else:
         print("HANDLE IMU")
@@ -74,14 +76,14 @@ def senderProcess(dataBuffer, lock, currGame):
 
     ## Flag to dictate which player's action has been set
     playerFlags = {
-        "1": False,
-        "2": False
+        1: False,
+        2: False
     }
 
     ## Buffer to store a player's action
     playerActionBuffer = {
-        "1": None,
-        "2": None
+        1 : None,
+        2 : None
     }
 
     ## thread pool to put action calculations
@@ -89,19 +91,20 @@ def senderProcess(dataBuffer, lock, currGame):
 
     ## Buffer to store if a player has been shot 
     playerShotMap = {
-        "1" : False,
-        "2" : False
+        1 : False,
+        2 : False
     }
+    timerCount = 5
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.connect((EVAL_HOST, EVAL_PORT))
         while True:
             ## We only want to check when there is data in the buffer
             if not dataBuffer.empty():
+
                 ## Critical Section, use lock to gain ownership of dataBuffer
                 lock.acquire()
                 Data = int(dataBuffer.get())
                 lock.release()
-
                 ## Single Player Mode -> Predict and then send
                 if currGame.isSinglePlayer():
                     payloadParser(Data, playerActionBuffer)
@@ -131,25 +134,32 @@ def senderProcess(dataBuffer, lock, currGame):
                     threadPool.append(threading.Thread(target=payloadParser, args=(Data, playerActionBuffer)))
 
 
-                    ## if both player 1 and player 2 has taken an action
-                    if playerFlags["1"] and playerFlags["2"]:
-                        ## we wait for the threads to finish computation
-                        for thread in threadPool:
-                            thread.join()
+            ## if both player 1 and player 2 has taken an action
+            if playerFlags[1] and playerFlags[2]:
+                ## we wait for the threads to finish computation
+                for thread in threadPool:
+                    thread.join()
 
-                        ## we input the playerShotMap and action buffer into the take action function of currgame to update state
-                        currGame.takeAction(getShotMap=playerShotMap.copy(), **playerActionBuffer)
+                ## We want to give a buffer time of 1 second to see if player has been shot
+                if timerCount != 0:
+                    time.sleep(0.2)
+                    timerCount -= 1
+                    continue
+                else:
+                    timerCount = 5
 
-                        ## get the currentgame state in json
-                        encoded = formatData(currGame.toJson())
+                ## we input the playerShotMap and action buffer into the take action function of currgame to update state
+                currGame.takeAction(getShotMap=playerShotMap.copy(), **playerActionBuffer)
 
-                        ## send
-                        sock.sendall(encoded)
-                        receivedMsg = sock.recv(2048)
-                        print(receivedMsg)
-                        actionCount = 0
-                        for player in playerFlags:
-                            playerFlags[player] = False
+                ## get the currentgame state in json
+                encoded = formatData(currGame.toJson())
+
+                ## send
+                sock.sendall(encoded)
+                receivedMsg = sock.recv(2048)
+                print(receivedMsg)
+                for player in playerFlags:
+                    playerFlags[player] = False
 
 
 if __name__ == '__main__':

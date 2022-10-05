@@ -1,7 +1,8 @@
 import json
 import threading
 import time
-
+import action
+    
 class player:
     def __init__(self, id):
         self.id = id
@@ -74,5 +75,8 @@ class player:
 
     def getShot(self):
         self.getDamaged(10)
+    
+    def exit(self):
+        print("EXIT")
 
     
