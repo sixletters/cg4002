@@ -8,9 +8,9 @@ import numpy
 idOfBeetle1 = 0
 macAddressBeetle1 = "C4:BE:84:20:1A:5C"
 idOfBeetle2 = 1
-macAddressBeetle2 = "D0:39:72:BF:C6:1D"
+macAddressBeetle2 = "C4:BE:84:20:1C:4D"
 idOfBeetle3 = 2
-macAddressBeetle3 = "D0:39:72:BF:BD:B7"
+macAddressBeetle3 = "B0:B1:13:2D:B5:02"
 characteristicToWrite = "0000dfb1-0000-1000-8000-00805f9b34fb"
 
 helloBuffer = [0, 0, 0]
@@ -27,6 +27,8 @@ class Delegate(DefaultDelegate):
         self.lock = lock
         self.handshake = False
         self.fullPacket = False
+        self.packetOneCount = bytearray(0)
+        self.packetTwoCount = bytearray(0)
 
     def combineTwoPayloads(self, buffer):
         result = 0
@@ -44,47 +46,76 @@ class Delegate(DefaultDelegate):
         if(len(receivingBuffer) == 20):
             packet = bytearray(data)
             packetType = struct.unpack('b', packet[1:2])
-            print("packetType: ", packetType, " receiving packet: ", packet)
-            if self.handshake and packetType == (0,):
-                # print("packetCount = ", struct.unpack('b', packet[3:4]))
-                # print("a1 = %.4f" % struct.unpack('<f', packet[4:8]))
-                # print("a2 = %.4f" % struct.unpack('<f', packet[8:12]))
-                # print("a3 = %.4f" % struct.unpack('<f', packet[12:16]))
-                
-                self.packetOne = packet[3:15]
-                self.packetOneCount = packet[2]
-                # print("packetOneCount = ", self.packetOneCount)
-                # print("packetOne: ", self.packetOne)
-                # q.put(packet)
-            elif self.handshake and packetType == (1,):
-                # print("packetCount = ", struct.unpack('b', packet[3:4]))
-                # print("g1 = %.4f" % struct.unpack('<f', packet[4:8]))
-                # print("g2 = %.4f" % struct.unpack('<f', packet[8:12]))
-                # print("g3 = %.4f" % struct.unpack('<f', packet[12:16]))
-                
-                self.packetTwo = packet[3:15]
-                self.packetTwoCount = packet[2]
-                # print("packetTwoCount = ", self.packetTwoCount)
-                # print("packetTwo: ", self.packetTwo)
-                self.fullPacket = True
-                # print("full = ", self.fullPacket)
-                # print("count = ", self.packetOneCount + 1, self.packetTwoCount)
-                # q.put(packet)
+            # print("packetType: ", packetType, " receiving packet: ", packet)
+            if self.idOfBeetle == 0:
+                if self.handshake and packetType == (0,):
+                    # print("packetCount = ", struct.unpack('b', packet[3:4]))
+                    # print("a1 = %.4f" % struct.unpack('<f', packet[4:8]))
+                    # print("a2 = %.4f" % struct.unpack('<f', packet[8:12]))
+                    # print("a3 = %.4f" % struct.unpack('<f', packet[12:16]))
+                    
+                    self.packetOne = packet[3:15]
+                    self.packetOneCount = packet[2]
+                    print("packetCount: ", self.packetOneCount)
+                    # print("packetOneCount = ", self.packetOneCount)
+                    # print("packetOne: ", self.packetOne)
+                    # q.put(packet)
+                elif self.handshake and packetType == (1,):
+                    # print("packetCount = ", struct.unpack('b', packet[3:4]))
+                    # print("g1 = %.4f" % struct.unpack('<f', packet[4:8]))
+                    # print("g2 = %.4f" % struct.unpack('<f', packet[8:12]))
+                    # print("g3 = %.4f" % struct.unpack('<f', packet[12:16]))
+                    
+                    self.packetTwo = packet[3:15]
+                    self.packetTwoCount = packet[2]
+                    # print("packetTwoCount = ", self.packetTwoCount)
+                    # print("packetTwo: ", self.packetTwo)
+                    self.fullPacket = True
+                    # print("full = ", self.fullPacket)
+                    # print("count = ", self.packetOneCount + 1, self.packetTwoCount)
+                    # q.put(packet)
+                else:
+                    pass
+
+                if self.fullPacket and (self.packetOneCount + 1 == self.packetTwoCount):
+                    # print("put packet")
+                    data = self.idOfBeetle.to_bytes(2, 'little') + self.packetOne + self.packetTwo
+                    print("data: ", data)
+                    self.lock.acquire()
+                    self.dataBuffer.put(data)
+                    self.lock.release()
+                    self.fullPacket = False
+                    
+            elif self.idOfBeetle == 1:
+                if self.handshake:
+                    pdata = packet[1:2]
+                    data = {
+                        "beetleID": self.idOfBeetle,
+                        "sendShot": pdata
+                    }
+                    print("data: ", data)
+                    self.lock.acquire()
+                    self.dataBuffer.put(data)
+                    self.lock.release()
+                else:
+                    pass
+            
+            elif self.idOfBeetle == 2:
+                if self.handshake:
+                    qdata = packet[1:2]
+                    data = {
+                        "beetleID": self.idOfBeetle,
+                        "shotReceived": qdata
+                    }
+                    print("data: ", data)
+                    self.lock.acquire()
+                    self.dataBuffer.put(data)
+                    self.lock.release()
+                else:
+                    pass
+
             else:
                 pass
-
-            if self.fullPacket and (self.packetOneCount + 1 == self.packetTwoCount):
-                # print("put packet")
-                data = {
-                    "beetleID": self.idOfBeetle,
-                    "packetOne": self.packetOne,
-                    "packetTwo": self.packetTwo
-                }
-                print("data: ", data)
-                self.lock.acquire()
-                self.dataBuffer.put(data)
-                self.lock.release()
-                self.fullPacket = False
 
         elif len(receivingBuffer) == 1 and data == str.encode("A"):
             print('ACK SENT')
@@ -113,14 +144,16 @@ class Communication:
                 characteristic.write(bytes(val), withResponse=False)
 
     def connectToBeetle(self):
-        try:
-            self.dev = Peripheral(self.macAddress)
-            print("connected!")
-            devDelegate = Delegate(self.idOfBeetle, self.dataBuffer, self.lock)
-            self.dev.setDelegate(devDelegate)
-        except Exception as e:
-            print("Unable to connect: ", e)
-            pass
+        while 1:
+            try:
+                self.dev = Peripheral(self.macAddress)
+                print("connected!")
+                devDelegate = Delegate(self.idOfBeetle, self.dataBuffer, self.lock)
+                self.dev.setDelegate(devDelegate)
+                break
+            except Exception as e:
+                print("Unable to connect: ", e)
+                pass
     
     def threeWayHandshake(self):
         handshake = False
@@ -183,10 +216,10 @@ def internalComms(dataBuffer, lock):
     lock = mp.Lock()
     beetle1 = Communication(idOfBeetle1, macAddressBeetle1, dataBuffer, lock)
     thread1 = threading.Thread(target=beetle1.protocol, args=())
-    # thread2 = threading.Thread(target= print_data, args=(dataBuffer, lock))
+    beetle2 = Communication(idOfBeetle2, macAddressBeetle2, dataBuffer, lock)
+    thread2 = threading.Thread(target=beetle2.protocol, args=())
+    beetle3 = Communication(idOfBeetle3, macAddressBeetle3, dataBuffer, lock)
+    thread3 = threading.Thread(target=beetle3.protocol, args=())
     thread1.start()
-    # thread2.start()
-
-
-
-
+    thread2.start()
+    thread3.start()

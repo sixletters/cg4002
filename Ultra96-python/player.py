@@ -78,5 +78,7 @@ class player:
     
     def exit(self):
         print("EXIT")
-
     
+    def synchronise(self,**kwargs):
+        for key,value in kwargs.items():
+            setattr(self,key,value)

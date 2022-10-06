@@ -10,6 +10,7 @@ from Cryptodome.Random import get_random_bytes
 from Crypto.Util.Padding import pad
 import threading
 import time
+import struct
 import action
 
 MYTCP_PORT = 8080
@@ -27,17 +28,37 @@ def predict(data):
 
 ## Deserialization of bytestream into a python dictionary
 def deserialize(bytestream):
-    print(bytestream)
-
+    playerID = int.from_bytes(bytestream[0:2], "little")
+    beetleID = int.from_bytes(bytestream[2:4], "little")
+    deserializedData = {
+        "playerID" : playerID,
+        "beetleID" : beetleID,
+    }
+    if beetleID == 0:
+        a1 = struct.unpack('<f', bytestream[4:8])
+        a2 =  struct.unpack('<f', bytestream[8:12])
+        a3 =  struct.unpack('<f', bytestream[12:16])
+        g1 = struct.unpack('<f', bytestream[16:20])
+        g2 = struct.unpack('<f', bytestream[20:24])
+        g3 = struct.unpack('<f', bytestream[24:])
+    deserializedData['payload'] = {
+        "a1" : a1,
+        "a2" : a2,
+        "a3" : a3,
+        "g1" : g1,
+        "g2" : g2,
+        "g3" : g3
+    }
 ## Parses the payload of the data to an action
+
 def payloadParser(data, playerActionBuffer):
     currPlayer = data["playerID"]
     if data["beetleID"] == 0:
-        print("HANDLE SENSOR")
+        action = "shoot"
     elif data["beetleID"] == 1:
-        print("HANDLE GUN")
+        action = "shoot"
     else:
-        print("HANDLE IMU")
+        action = "getShot"
     
     playerActionBuffer[data["playerID"]]['action'] = action
     
@@ -142,7 +163,7 @@ def senderProcess(dataBuffer, lock, currGame):
 
                 ## We want to give a buffer time of 1 second to see if player has been shot
                 if timerCount != 0:
-                    time.sleep(0.2)
+                    time.sleep(0.05)
                     timerCount -= 1
                     continue
                 else:
@@ -156,8 +177,8 @@ def senderProcess(dataBuffer, lock, currGame):
 
                 ## send
                 sock.sendall(encoded)
-                receivedMsg = sock.recv(2048)
-                print(receivedMsg)
+                expectedGameState= sock.recv(2048)
+                currGame.synchronise(expectedGameState)
                 for player in playerFlags:
                     playerFlags[player] = False
 

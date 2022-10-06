@@ -58,6 +58,11 @@ class Game:
             if p2_action == actions.reload:
                 self.players[2].reload()
 
+    def synchronise(self, gamestate):
+        parsedGameDict = json.loads(gamestate)
+        self.player[1].synchronise(parsedGameDict["p1"])
+        if not self.isSinglePlayer:
+            self.player[2].synchronise(parsedGameDict["p2"])
 
     def toJson(self):
         data = {}
