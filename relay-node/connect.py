@@ -88,12 +88,7 @@ class Delegate(DefaultDelegate):
                     
             elif self.idOfBeetle == 1:
                 if self.handshake:
-                    pdata = packet[1:2]
-                    data = {
-                        "beetleID": self.idOfBeetle,
-                        "sendShot": pdata
-                    }
-                    print("data: ", data)
+                    data = self.idOfBeetle.to_bytes(2, 'little')
                     self.lock.acquire()
                     self.dataBuffer.put(data)
                     self.lock.release()
@@ -102,11 +97,7 @@ class Delegate(DefaultDelegate):
             
             elif self.idOfBeetle == 2:
                 if self.handshake:
-                    qdata = packet[1:2]
-                    data = {
-                        "beetleID": self.idOfBeetle,
-                        "shotReceived": qdata
-                    }
+                    data = self.idOfBeetle.to_bytes(2, 'little')
                     print("data: ", data)
                     self.lock.acquire()
                     self.dataBuffer.put(data)
@@ -213,6 +204,7 @@ def print_data(queue, lock):
 
 def internalComms(dataBuffer, lock):
     dataBuffer = mp.Queue()
+    data = self.idOfBeetle.to_bytes(2, 'little') + packetOne + packetTwo
     lock = mp.Lock()
     beetle1 = Communication(idOfBeetle1, macAddressBeetle1, dataBuffer, lock)
     thread1 = threading.Thread(target=beetle1.protocol, args=())

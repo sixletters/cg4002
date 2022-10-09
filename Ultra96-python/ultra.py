@@ -24,7 +24,7 @@ iv = get_random_bytes(AES.block_size)
 
 ## Predict function to be implemented
 def predict(data):
-    return data
+    return "shield"
 
 ## Deserialization of bytestream into a python dictionary
 def deserialize(bytestream):
@@ -35,34 +35,29 @@ def deserialize(bytestream):
         "beetleID" : beetleID,
     }
     if beetleID == 0:
-        a1 = struct.unpack('<f', bytestream[4:8])
-        a2 =  struct.unpack('<f', bytestream[8:12])
-        a3 =  struct.unpack('<f', bytestream[12:16])
-        g1 = struct.unpack('<f', bytestream[16:20])
-        g2 = struct.unpack('<f', bytestream[20:24])
-        g3 = struct.unpack('<f', bytestream[24:])
-    deserializedData['payload'] = {
-        "a1" : a1,
-        "a2" : a2,
-        "a3" : a3,
-        "g1" : g1,
-        "g2" : g2,
-        "g3" : g3
-    }
+        a1 = struct.unpack('<f', bytestream[4:8])[0]
+        a2 =  struct.unpack('<f', bytestream[8:12])[0]
+        a3 =  struct.unpack('<f', bytestream[12:16])[0]
+        g1 = struct.unpack('<f', bytestream[16:20])[0]
+        g2 = struct.unpack('<f', bytestream[20:24])[0]
+        g3 = struct.unpack('<f', bytestream[24:])[0]
+        deserializedData['payload'] = {
+            "a1" : a1,
+            "a2" : a2,
+            "a3" : a3,
+            "g1" : g1,
+            "g2" : g2,
+            "g3" : g3
+        }
+    return deserializedData
 ## Parses the payload of the data to an action
 
 def payloadParser(data, playerActionBuffer):
-    currPlayer = data["playerID"]
     if data["beetleID"] == 0:
-        action = "shoot"
+        playerActionBuffer[str(data["playerID"])] = predict(data)
     elif data["beetleID"] == 1:
-        action = "shoot"
-    else:
-        action = "getShot"
+        playerActionBuffer[str(data["playerID"])] = "shoot"
     
-    playerActionBuffer[data["playerID"]]['action'] = action
-    
-
 
 ## Input game state in Json, output encoded data to be sent
 def formatData(gameState):
@@ -103,8 +98,8 @@ def senderProcess(dataBuffer, lock, currGame):
 
     ## Buffer to store a player's action
     playerActionBuffer = {
-        1 : None,
-        2 : None
+        "1" : None,
+        "2" : None
     }
 
     ## thread pool to put action calculations
@@ -124,7 +119,7 @@ def senderProcess(dataBuffer, lock, currGame):
 
                 ## Critical Section, use lock to gain ownership of dataBuffer
                 lock.acquire()
-                Data = int(dataBuffer.get())
+                Data = dataBuffer.get()
                 lock.release()
                 ## Single Player Mode -> Predict and then send
                 if currGame.isSinglePlayer():
@@ -132,15 +127,18 @@ def senderProcess(dataBuffer, lock, currGame):
                     currGame.takeAction(**playerActionBuffer)
                     encoded = formatData(currGame.toJson())
                     sock.sendall(encoded)
-                    receivedMsg = sock.recv(2048)
-                    print(receivedMsg)
+                    expectedGameState = sock.recv(2048)
+                    print(expectedGameState)
+                    print("BREAK")
+                    currGame.synchronise(expectedGameState[4:])
+                    print(currGame.toJson())
 
                 else:
                     ## Check playerID of the data
                     currPlayer = Data['playerID']
 
                     ## If player has already taken an action and if the data packet isnt a "get shot" packet, we can discard it
-                    if playerFlags[currPlayer] and Data["beetldID"] != 2:
+                    if playerFlags[currPlayer] and Data["beetleID"] != 2:
                         continue
                     
                     ## If it is a getshot packet, we can just set the getshot buffer as true as an input into take action
@@ -152,7 +150,9 @@ def senderProcess(dataBuffer, lock, currGame):
                     ## If it is not a "get shot" packet, we set the action to true and then launch a worker thread to 
                     ## compute action based on data payload
                     playerFlags[currPlayer] = True
-                    threadPool.append(threading.Thread(target=payloadParser, args=(Data, playerActionBuffer)))
+                    workerThread = threading.Thread(target=payloadParser, args=(Data, playerActionBuffer))
+                    workerThread.start()
+                    threadPool.append(workerThread)
 
 
             ## if both player 1 and player 2 has taken an action
@@ -178,7 +178,7 @@ def senderProcess(dataBuffer, lock, currGame):
                 ## send
                 sock.sendall(encoded)
                 expectedGameState= sock.recv(2048)
-                currGame.synchronise(expectedGameState)
+                currGame.synchronise(expectedGameState[4:])
                 for player in playerFlags:
                     playerFlags[player] = False
 

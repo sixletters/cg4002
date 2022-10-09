@@ -46,8 +46,7 @@ int main(){
     };
     while(true){
         std::cout<< "LISTENING";
-        len = sizeof(client);
-        connfd = accept(sockfd, (struct sockaddr *) &client, &len);
+       cl
         while(!end)
 	    {
 		if ((n= recv(connfd, &recvs, DATALEN, 0))==-1)                                   //receive the packet
