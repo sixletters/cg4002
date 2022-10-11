@@ -4,6 +4,12 @@ import struct
 MYTCP_PORT = 8080
 import multiprocessing as mp
 from connect import internalComms
+def serialize(data):
+    serialzedData = b''
+    serialzedData += data["playerID"].to_bytes(2, 'little') 
+    serialzedData += data["beetleID"].to_bytes(2, 'little')
+    if data["beetleID"] == 0:   
+        serialzedData += data["packetOne"] + data["packetTwo"]
 
 def relayProcess(dataBuffer, lock):
     while True:
@@ -11,6 +17,7 @@ def relayProcess(dataBuffer, lock):
             lock.acquire()
             action = dataBuffer.get()
             lock.release()
+            serializedData = serialize(action)
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((HOST, MYTCP_PORT))
                 sock.send(action)

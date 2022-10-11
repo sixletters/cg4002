@@ -1,5 +1,6 @@
 import multiprocessing as mp
 from os import readlink
+from queue import Queue
 import socket
 from player import player
 from game import Game
@@ -21,7 +22,8 @@ EVAL_PORT = 8090
 ## Encryption intiliazation
 key = "connecttoevalkey".encode("utf-8")
 iv = get_random_bytes(AES.block_size)
-IMU_PREV_DATA = None
+IMU_DATA_BUFFER = []
+BUFFER_INDEX = 0
 THRESHOLD = 0.5
 
 ## Process that receives the data and puts it into the buffer
@@ -102,22 +104,28 @@ def senderProcess(dataBuffer, lock, currGame):
                         playerShotMap[Data["playerID"]] = Data["payload"]
                         continue
                     
-                    if Data["beetleID"] == 0 and util.idleChecker(Data, IMU_PREV_DATA, THRESHOLD):
-                        IMU_PREV_DATA = Data
-                        continue
+                    if Data["beetleID"] == 0:
+                        if len(IMU_DATA_BUFFER) == 5: 
+                            IMU_DATA_BUFFER[BUFFER_INDEX] = Data
+                        else:
+                            IMU_DATA_BUFFER.append(Data)
 
-                    IMU_PREV_DATA = Data
+                        BUFFER_INDEX += 1
+                        if BUFFER_INDEX == 5:
+                            BUFFER_INDEX = 0
+                    
                     
                     ## If it is not a "get shot" packet, we set the action to true and then launch a worker thread to 
                     ## compute action based on data payload
                     playerFlags[currPlayer] = True
-                    workerThread = threading.Thread(target=util.payloadParser, args=(Data, playerActionBuffer))
+                    workerThread = threading.Thread(target=util.payloadParser, args=(Data, playerActionBuffer, IMU_DATA_BUFFER))
                     workerThread.start()
                     threadPool.append(workerThread)
 
 
             ## if both player 1 and player 2 has taken an action
             if playerFlags[1] and playerFlags[2]:
+                IMU_DATA_BUFFER = []
                 ## we wait for the threads to finish computation
                 for thread in threadPool:
                     thread.join()
