@@ -12,6 +12,7 @@ import threading
 import time
 import struct
 import action
+import util as util
 
 MYTCP_PORT = 8080
 EVAL_HOST = "127.0.0.1"  # The server's hostname or IP address
@@ -20,54 +21,8 @@ EVAL_PORT = 8090
 ## Encryption intiliazation
 key = "connecttoevalkey".encode("utf-8")
 iv = get_random_bytes(AES.block_size)
-
-
-## Predict function to be implemented
-def predict(data):
-    return "shield"
-
-## Deserialization of bytestream into a python dictionary
-def deserialize(bytestream):
-    playerID = int.from_bytes(bytestream[0:2], "little")
-    beetleID = int.from_bytes(bytestream[2:4], "little")
-    deserializedData = {
-        "playerID" : playerID,
-        "beetleID" : beetleID,
-    }
-    if beetleID == 0:
-        a1 = struct.unpack('<f', bytestream[4:8])[0]
-        a2 =  struct.unpack('<f', bytestream[8:12])[0]
-        a3 =  struct.unpack('<f', bytestream[12:16])[0]
-        g1 = struct.unpack('<f', bytestream[16:20])[0]
-        g2 = struct.unpack('<f', bytestream[20:24])[0]
-        g3 = struct.unpack('<f', bytestream[24:])[0]
-        deserializedData['payload'] = {
-            "a1" : a1,
-            "a2" : a2,
-            "a3" : a3,
-            "g1" : g1,
-            "g2" : g2,
-            "g3" : g3
-        }
-    return deserializedData
-## Parses the payload of the data to an action
-
-def payloadParser(data, playerActionBuffer):
-    if data["beetleID"] == 0:
-        playerActionBuffer[str(data["playerID"])] = predict(data)
-    elif data["beetleID"] == 1:
-        playerActionBuffer[str(data["playerID"])] = "shoot"
-    
-
-## Input game state in Json, output encoded data to be sent
-def formatData(gameState):
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    gameStateData = pad(gameState.encode("utf-8"), AES.block_size)
-    encoded = base64.b64encode(iv + cipher.encrypt(gameStateData ))
-    prefix = (str(len(encoded)) + "_").encode("utf-8")
-    encoded = prefix + encoded
-    return encoded
-
+IMU_PREV_DATA = None
+THRESHOLD = 0.5
 
 ## Process that receives the data and puts it into the buffer
 ## Has a lock for critical section when accessing data buffer
@@ -79,7 +34,7 @@ def receiverProcess(dataBuffer, lock):
             conn, addr = sock.accept()
             with conn:
                 print(f"connected with {addr}")
-                data = deserialize(conn.recv(1024))
+                data = util.deserialize(conn.recv(1024))
                 lock.acquire()
                 dataBuffer.put(data)
                 lock.release()
@@ -123,9 +78,9 @@ def senderProcess(dataBuffer, lock, currGame):
                 lock.release()
                 ## Single Player Mode -> Predict and then send
                 if currGame.isSinglePlayer():
-                    payloadParser(Data, playerActionBuffer)
+                    util.payloadParser(Data, playerActionBuffer)
                     currGame.takeAction(**playerActionBuffer)
-                    encoded = formatData(currGame.toJson())
+                    encoded = util.formatData(currGame.toJson(),key,iv)
                     sock.sendall(encoded)
                     expectedGameState = sock.recv(2048)
                     print(expectedGameState)
@@ -146,11 +101,17 @@ def senderProcess(dataBuffer, lock, currGame):
                     if Data["beetleID"] == 2 and not playerShotMap[Data["playerID"]]:
                         playerShotMap[Data["playerID"]] = Data["payload"]
                         continue
+                    
+                    if Data["beetleID"] == 0 and util.idleChecker(Data, IMU_PREV_DATA, THRESHOLD):
+                        IMU_PREV_DATA = Data
+                        continue
 
+                    IMU_PREV_DATA = Data
+                    
                     ## If it is not a "get shot" packet, we set the action to true and then launch a worker thread to 
                     ## compute action based on data payload
                     playerFlags[currPlayer] = True
-                    workerThread = threading.Thread(target=payloadParser, args=(Data, playerActionBuffer))
+                    workerThread = threading.Thread(target=util.payloadParser, args=(Data, playerActionBuffer))
                     workerThread.start()
                     threadPool.append(workerThread)
 
@@ -161,7 +122,7 @@ def senderProcess(dataBuffer, lock, currGame):
                 for thread in threadPool:
                     thread.join()
 
-                ## We want to give a buffer time of 1 second to see if player has been shot
+                ## We want to give a buffer time of 0.25 second to see if player has been shot
                 if timerCount != 0:
                     time.sleep(0.05)
                     timerCount -= 1
@@ -173,7 +134,7 @@ def senderProcess(dataBuffer, lock, currGame):
                 currGame.takeAction(getShotMap=playerShotMap.copy(), **playerActionBuffer)
 
                 ## get the currentgame state in json
-                encoded = formatData(currGame.toJson())
+                encoded = util.formatData(currGame.toJson(),key,iv)
 
                 ## send
                 sock.sendall(encoded)

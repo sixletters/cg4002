@@ -14,9 +14,10 @@ macAddressBeetle3 = "B0:B1:13:2D:B5:02"
 characteristicToWrite = "0000dfb1-0000-1000-8000-00805f9b34fb"
 
 helloBuffer = [0, 0, 0]
-receivingBuffer = []
+receivingBuffer = ""
 allBeetlesConnected = []
-
+nakBuffer = [0, 0, 0]
+ackBuffer = [0, 0, 0]
 
 
 class Delegate(DefaultDelegate):
@@ -30,94 +31,98 @@ class Delegate(DefaultDelegate):
         self.packetOneCount = bytearray(0)
         self.packetTwoCount = bytearray(0)
 
-    def combineTwoPayloads(self, buffer):
-        result = 0
-        for b in buffer:
-            result = result *256 + int(b)
-        return result
+    def doChecksum(self, packetData):
+        checksum = 0
+
+        for i in range(19):
+            checksum = (checksum ^ packetData[i]) & 0xFF
+        
+        if checksum == packetData[19]:
+            return True
+        else:
+            return False
 
     def handleNotification(self, cHandle, data):
         global receivingBuffer
-        # print("length of data: ", len(data))
-        receivingBuffer = data
+        receivingBuffer += data
 
-        
-        # print("length of rBuffer: ", len(receivingBuffer))
-        if(len(receivingBuffer) == 20):
-            packet = bytearray(data)
+        if(len(receivingBuffer) >= 20):
+            packet = bytearray(receivingBuffer[0:20])
+            receivingBuffer = receivingBuffer[20:]
             packetType = struct.unpack('b', packet[1:2])
-            # print("packetType: ", packetType, " receiving packet: ", packet)
             if self.idOfBeetle == 0:
-                if self.handshake and packetType == (0,):
-                    # print("packetCount = ", struct.unpack('b', packet[3:4]))
-                    # print("a1 = %.4f" % struct.unpack('<f', packet[4:8]))
-                    # print("a2 = %.4f" % struct.unpack('<f', packet[8:12]))
-                    # print("a3 = %.4f" % struct.unpack('<f', packet[12:16]))
-                    
-                    self.packetOne = packet[3:15]
-                    self.packetOneCount = packet[2]
-                    print("packetCount: ", self.packetOneCount)
-                    # print("packetOneCount = ", self.packetOneCount)
-                    # print("packetOne: ", self.packetOne)
-                    # q.put(packet)
-                elif self.handshake and packetType == (1,):
-                    # print("packetCount = ", struct.unpack('b', packet[3:4]))
-                    # print("g1 = %.4f" % struct.unpack('<f', packet[4:8]))
-                    # print("g2 = %.4f" % struct.unpack('<f', packet[8:12]))
-                    # print("g3 = %.4f" % struct.unpack('<f', packet[12:16]))
-                    
-                    self.packetTwo = packet[3:15]
-                    self.packetTwoCount = packet[2]
-                    # print("packetTwoCount = ", self.packetTwoCount)
-                    # print("packetTwo: ", self.packetTwo)
-                    self.fullPacket = True
-                    # print("full = ", self.fullPacket)
-                    # print("count = ", self.packetOneCount + 1, self.packetTwoCount)
-                    # q.put(packet)
+                if self.doChecksum(packet) == True:
+                    if self.handshake and packetType == (0,):
+                        self.packetOne = packet[3:15]
+                        self.packetOneCount = packet[2]
+                    elif self.handshake and packetType == (1,):
+                        self.packetTwo = packet[3:15]
+                        self.packetTwoCount = packet[2]
+                        self.fullPacket = True
+                    else:
+                        pass
                 else:
+                    print(self.idOfBeetle, " corrupted Packet")
                     pass
 
                 if self.fullPacket and (self.packetOneCount + 1 == self.packetTwoCount):
-                    # print("put packet")
-                    data = self.idOfBeetle.to_bytes(2, 'little') + self.packetOne + self.packetTwo
-                    print("data: ", data)
+                    PLAYER_ID = 1
+                    serialzedData = b''
+                    serialzedData += PLAYER_ID.to_bytes(2, 'little') 
+                    serialzedData += self.idOfBeetle.to_bytes(2, 'little')
+                    serialzedData +=  self.packetOne + self.packetTwo
                     self.lock.acquire()
-                    self.dataBuffer.put(data)
+                    self.dataBuffer.put(serialzedData)
                     self.lock.release()
                     self.fullPacket = False
                     
             elif self.idOfBeetle == 1:
-                if self.handshake:
-                    data = self.idOfBeetle.to_bytes(2, 'little')
-                    self.lock.acquire()
-                    self.dataBuffer.put(data)
-                    self.lock.release()
+                if self.doChecksum(packet) == True:
+                    if self.handshake:
+                        PLAYER_ID = 1
+                        serialzedData = b''
+                        serialzedData += PLAYER_ID.to_bytes(2, 'little') 
+                        serialzedData += self.idOfBeetle.to_bytes(2, 'little')
+                        self.lock.acquire()
+                        self.dataBuffer.put(serialzedData)
+                        self.lock.release()
+                        ackBuffer[self.idOfBeetle] = 1
+                    else:
+                        pass
                 else:
+                    nakBuffer[self.idOfBeetle] = 1
+                    print(self.idOfBeetle, " corrupted packet")
                     pass
             
             elif self.idOfBeetle == 2:
-                if self.handshake:
-                    data = self.idOfBeetle.to_bytes(2, 'little')
-                    print("data: ", data)
-                    self.lock.acquire()
-                    self.dataBuffer.put(data)
-                    self.lock.release()
+                if self.doChecksum(packet) == True:
+                    if self.handshake:
+                        PLAYER_ID = 2
+                        serialzedData = b''
+                        serialzedData += PLAYER_ID.to_bytes(2, 'little') 
+                        serialzedData += self.idOfBeetle.to_bytes(2, 'little')
+                        self.lock.acquire()
+                        self.dataBuffer.put(serialzedData)
+                        self.lock.release()
+                        ackBuffer[self.idOfBeetle] = 1
+                    else:
+                        pass
                 else:
+                    nakBuffer[self.idOfBeetle] = 1
+                    print(self.idOfBeetle, " corrupted packet")
                     pass
 
             else:
                 pass
-
         elif len(receivingBuffer) == 1 and data == str.encode("A"):
             print('ACK SENT')
             self.handshake = True
             helloBuffer[self.idOfBeetle] = 1
+            receivingBuffer = ""
         else: 
+            print(self.idOfBeetle, " fragmented")
             pass
-
-
-       
-        
+     
 class Communication:
     def __init__(self, idOfBeetle, macAddress, dataBuffer, lock):
         self.idOfBeetle = idOfBeetle
@@ -161,51 +166,30 @@ class Communication:
 
     
     def protocol(self):
-        # self.connectToBeetle() 
-        
+
         handshake = False
         while True:
             try:
-                # self.dev.waitForNotifications(0.2)
                 if handshake:
-                    # if flag == False:
-                    # self.writeToBeetle(3,0)
-                    #     flag = True
                     self.dev.waitForNotifications(0.001)
+                    if len(ackBuffer) != 0 and ackBuffer[self.idOfBeetle] == 1:
+                        self.writeToBeetle("D")
+                        ackBuffer[self.idOfBeetle] = 0
+                    elif len(nakBuffer) != 0 and nakBuffer[self.idOfBeetle] == 1:
+                        self.writeToBeetle("C")
+                        nakBuffer[self.idOfBeetle] = 0
                     pass
                 else:
                     self.connectToBeetle()
                     handshake = self.threeWayHandshake()
             except KeyboardInterrupt:
                 self.dev.disconnect() 
-            except BTLEDisconnectError:
+            except (BTLEDisconnectError, AttributeError):
                 print(self.idOfBeetle, ' disconnected!')
                 handshake = False
                 helloBuffer[self.idOfBeetle] = 0
 
-
-def print_data(queue, lock):
-    while True:
-        try: 
-            lock.acquire()
-            packet = queue.get()
-            lock.release()
-            print("packet: ", packet)
-            # print("idOfBeetle = ", packet[0])
-            # print("a1 = %.4f" % struct.unpack('<f', packet[1:5]))
-            # print("a2 = %.4f" % struct.unpack('<f', packet[5:9]))
-            # print("a3 = %.4f" % struct.unpack('<f', packet[9:13]))
-            # print("g1 = %.4f" % struct.unpack('<f', packet[13:17]))
-            # print("g2 = %.4f" % struct.unpack('<f', packet[17:21]))
-            # print("g3 = %.4f" % struct.unpack('<f', packet[21:25]))
-
-        except KeyboardInterrupt:
-            break
-
 def internalComms(dataBuffer, lock):
-    dataBuffer = mp.Queue()
-    data = self.idOfBeetle.to_bytes(2, 'little') + packetOne + packetTwo
-    lock = mp.Lock()
     beetle1 = Communication(idOfBeetle1, macAddressBeetle1, dataBuffer, lock)
     thread1 = threading.Thread(target=beetle1.protocol, args=())
     beetle2 = Communication(idOfBeetle2, macAddressBeetle2, dataBuffer, lock)
