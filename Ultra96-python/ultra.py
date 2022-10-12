@@ -90,7 +90,8 @@ def senderProcess(dataBuffer, lock, currGame):
                         continue
 
                     util.payloadParser(Data, playerActionBuffer, IMU_DATA_BUFFER)
-                    currGame.takeAction(getShotMap=playerShotMap.copy(), **playerActionBuffer)
+                    print(playerShotMap)
+                    currGame.takeAction(getShotMap=playerShotMap, **playerActionBuffer)
                     encoded = util.formatData(currGame.toJson(),key,iv)
                     sock.sendall(encoded)
                     expectedGameState = sock.recv(2048)
