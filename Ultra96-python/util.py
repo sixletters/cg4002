@@ -6,7 +6,7 @@ from Cryptodome.Random import get_random_bytes
 from Crypto.Util.Padding import pad
 import predict
 
-INT_TO_ACTION_ARR = ["shield", "grenade","reload","exit"]
+INT_TO_ACTION_ARR = ["shield", "grenade","reload","exit", "idle"]
 
 ## Predict function to be implemented
 
@@ -28,14 +28,6 @@ def deserialize(bytestream):
         deserializedData['payload'] = [a1,a2,a3,g1,g2,g3]
     return deserializedData
 
-def idleChecker(data, IMU_PREV_DATA, THRESH):
-    curr_payload = data["payload"]
-    prev_payload = ["payload"]
-    diffSum = abs(curr_payload[0] - prev_payload[0]) + abs(curr_payload[1] - prev_payload[1]) + abs(curr_payload[2] - prev_payload[2])
-    if diffSum < THRESH:
-        return True
-    return False
-## Parses the payload of the data to an action
 
 def payloadParser(data, playerActionBuffer, IMU_DATA_BUFFER):
     predictionInputs = []

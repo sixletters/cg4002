@@ -2,6 +2,8 @@ import multiprocessing as mp
 from os import readlink
 from queue import Queue
 import socket
+
+from numpy import False_
 from player import player
 from game import Game
 import json
@@ -18,6 +20,7 @@ import util as util
 MYTCP_PORT = 8080
 EVAL_HOST = "127.0.0.1"  # The server's hostname or IP address
 EVAL_PORT = 8090
+BUFFER_LENGTH = 10
 
 ## Encryption intiliazation
 key = "connecttoevalkey".encode("utf-8")
@@ -105,14 +108,17 @@ def senderProcess(dataBuffer, lock, currGame):
                         continue
                     
                     if Data["beetleID"] == 0:
-                        if len(IMU_DATA_BUFFER) == 5: 
+                        if len(IMU_DATA_BUFFER) == BUFFER_LENGTH: 
                             IMU_DATA_BUFFER[BUFFER_INDEX] = Data
                         else:
                             IMU_DATA_BUFFER.append(Data)
 
                         BUFFER_INDEX += 1
-                        if BUFFER_INDEX == 5:
+                        if BUFFER_INDEX == BUFFER_LENGTH:
                             BUFFER_INDEX = 0
+                    
+                        if len(IMU_DATA_BUFFER) != BUFFER_LENGTH:
+                            continue
                     
                     
                     ## If it is not a "get shot" packet, we set the action to true and then launch a worker thread to 
@@ -125,6 +131,18 @@ def senderProcess(dataBuffer, lock, currGame):
 
             ## if both player 1 and player 2 has taken an action
             if playerFlags[1] and playerFlags[2]:
+                for thread in threadPool:
+                    thread.join()
+                
+                continueFlag = False
+                for i in playerActionBuffer:
+                    if playerActionBuffer[i] == "idle":
+                        playerFlags[int(i)] = False
+                        continueFlag = True
+
+                if continueFlag:
+                    continue
+
                 IMU_DATA_BUFFER = []
                 ## we wait for the threads to finish computation
                 for thread in threadPool:

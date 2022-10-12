@@ -1,3 +1,5 @@
+import struct
+
 def serialize(data):
     serialzedData = b''
     serialzedData += data["playerID"].to_bytes(2, 'little') 
