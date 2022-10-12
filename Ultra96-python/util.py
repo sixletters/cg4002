@@ -4,7 +4,7 @@ from Cryptodome.Cipher import AES
 import base64
 from Cryptodome.Random import get_random_bytes
 from Crypto.Util.Padding import pad
-import predict
+# import predict
 
 INT_TO_ACTION_ARR = ["shield", "grenade","reload","exit", "idle"]
 
