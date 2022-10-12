@@ -17,6 +17,7 @@ class Game:
 
     def takeAction(self,getShotMap = {}, **kwargs):
         p1_action = kwargs["1"]
+        print(p1_action)
         if self.singlePlayerMode:
             if p1_action == actions.shoot:
                 self.players[1].shoot()
