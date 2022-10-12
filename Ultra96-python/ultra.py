@@ -85,14 +85,14 @@ def senderProcess(dataBuffer, lock, currGame):
                 if currGame.isSinglePlayer():
                     util.payloadParser(Data, playerActionBuffer, IMU_DATA_BUFFER)
                     currGame.takeAction(**playerActionBuffer)
-                    print(currGame.toJson())
+                    print(playerActionBuffer)
                     encoded = util.formatData(currGame.toJson(),key,iv)
                     sock.sendall(encoded)
                     expectedGameState = sock.recv(2048)
                     print(expectedGameState)
-                    print("BREAK")
-                    print(expectedGameState[4:])
-                    currGame.synchronise(expectedGameState[4:])
+                    # print("BREAK")
+                    # print(expectedGameState[4:])
+                    # currGame.synchronise(expectedGameState[4:])
                     print(currGame.toJson())
 
                 else:
