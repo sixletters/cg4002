@@ -19,44 +19,44 @@ class Game:
         p1_action = kwargs["1"]
         print(p1_action)
         if self.singlePlayerMode:
-            if p1_action == actions.shoot:
+            if p1_action == "shoot":
                 self.players[1].shoot()
-            elif p1_action == actions.grenade:
+            elif p1_action == "grenade":
                 self.players[1].grenade()
-            elif p1_action == actions.reload:
+            elif p1_action == "reload":
                 self.players[1].reload()
-            elif p1_action == actions.shield:
+            elif p1_action == "shield":
                 self.players[1].shield()
             else:
                 self.players[1].exit()
         else:
             p2_action = p1_action = kwargs["2"]
-            if p1_action == actions.shield:
+            if p1_action == "shield":
                 self.players[1].shield()
 
-            if p2_action == actions.shield:
+            if p2_action == "shield":
                 self.players[2].shield()
 
-            if p1_action == actions.shoot and getShotMap[2]:
+            if p1_action == "shoot" and getShotMap[2]:
                 self.players[1].shoot()
                 self.players[2].getShot()
 
-            if p2_action == actions.shoot and getShotMap[1]:
+            if p2_action == "shoot" and getShotMap[1]:
                 self.players[2].shoot()
                 self.players[1].getShot()
 
-            if p1_action == actions.grenade:
+            if p1_action == "greande":
                 self.players[1].grenade()
                 self.players[2].getGrenade()
 
-            if p2_action == actions.grenade:
+            if p2_action == "grenade":
                 self.players[2].grenade()
                 self.players[1].getGrenade()
             
-            if p1_action == actions.reload:
+            if p1_action == "reload":
                 self.players[1].reload()
 
-            if p2_action == actions.reload:
+            if p2_action == "reload":
                 self.players[2].reload()
 
     def synchronise(self, gamestate):
