@@ -17,12 +17,15 @@ class Game:
 
     def takeAction(self,getShotMap = {}, **kwargs):
         p1_action = kwargs["1"]
-        print(p1_action)
+        print(getShotMap)
         if self.singlePlayerMode:
             if p1_action == "shoot":
                 self.players[1].shoot()
+                if getShotMap[2]:
+                    self.players[2].getShot()
             elif p1_action == "grenade":
                 self.players[1].grenade()
+                self.players[2].getGrenade()
             elif p1_action == "reload":
                 self.players[1].reload()
             elif p1_action == "shield":
