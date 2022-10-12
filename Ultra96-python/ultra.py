@@ -84,13 +84,11 @@ def senderProcess(dataBuffer, lock, currGame):
                 ## Single Player Mode -> Predict and then send
                 if currGame.isSinglePlayer():
                     currPlayer = Data['playerID']
-                    print(Data)
                     if Data["beetleID"] == 2 and not playerShotMap[Data["playerID"]]:
                         playerShotMap[Data["playerID"]] = True
                         continue
 
                     util.payloadParser(Data, playerActionBuffer, IMU_DATA_BUFFER)
-                    print(playerShotMap)
                     currGame.takeAction(getShotMap=playerShotMap, **playerActionBuffer)
                     encoded = util.formatData(currGame.toJson(),key,iv)
                     sock.sendall(encoded)
@@ -98,9 +96,8 @@ def senderProcess(dataBuffer, lock, currGame):
                     for i in playerShotMap:
                         playerShotMap[i] = False
                     print(expectedGameState)
-                    # print("BREAK")
-                    # print(expectedGameState[4:])
-                    # currGame.synchronise(expectedGameState[4:])
+                    if len(expectedGameState[4:]) != 0:
+                        currGame.synchronise(expectedGameState[4:])
 
                 else:
                     ## Check playerID of the data
