@@ -83,7 +83,7 @@ def senderProcess(dataBuffer, lock, currGame):
                 lock.release()
                 ## Single Player Mode -> Predict and then send
                 if currGame.isSinglePlayer():
-                    util.payloadParser(Data, playerActionBuffer)
+                    util.payloadParser(Data, playerActionBuffer, IMU_DATA_BUFFER)
                     currGame.takeAction(**playerActionBuffer)
                     encoded = util.formatData(currGame.toJson(),key,iv)
                     sock.sendall(encoded)

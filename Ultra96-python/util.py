@@ -13,11 +13,12 @@ INT_TO_ACTION_ARR = ["shield", "grenade","reload","exit", "idle"]
 ## Deserialization of bytestream into a python dictionary
 def deserialize(bytestream):
     playerID = bytestream[0] - 48
-    beetleID = bytestream[1] - 49
+    beetleID = bytestream[1] - 48
     deserializedData = {
         "playerID" : playerID,
         "beetleID" : beetleID,
     }
+    print(deserializedData)
     if beetleID == 0:
         a1 = struct.unpack('<f', bytestream[2:6])[0]
         a2 =  struct.unpack('<f', bytestream[6:10])[0]
