@@ -25,7 +25,6 @@ BUFFER_LENGTH = 10
 ## Encryption intiliazation
 key = "connecttoevalkey".encode("utf-8")
 iv = get_random_bytes(AES.block_size)
-IMU_DATA_BUFFER = []
 BUFFER_INDEX = 0
 THRESHOLD = 0.5
 
@@ -71,6 +70,7 @@ def senderProcess(dataBuffer, lock, currGame):
         2 : False
     }
     timerCount = 5
+    IMU_DATA_BUFFER = []
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.connect((EVAL_HOST, EVAL_PORT))
         while True:
