@@ -21,10 +21,6 @@ class player:
         if self.grenade:
             self.grenade -= 1
 
-    def shoot(self):
-        self.action = "shoot"
-        if self.bullets:
-            self.bullets -= 1
     
     def shield_health_counter(self):
         self.shield_time = 10
@@ -51,6 +47,7 @@ class player:
     def shoot(self):
         if self.bullets > 0:
             self.bullets -= 1
+            self.action = "shoot"
 
     def getDamaged(self, damage):
         if self.activated_shield:
