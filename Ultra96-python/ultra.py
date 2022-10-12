@@ -97,7 +97,7 @@ def senderProcess(dataBuffer, lock, currGame):
                     expectedGameState = sock.recv(2048)
                     for i in playerShotMap:
                         playerShotMap[i] = False
-                    # print(expectedGameState)
+                    print(expectedGameState)
                     # print("BREAK")
                     # print(expectedGameState[4:])
                     # currGame.synchronise(expectedGameState[4:])
