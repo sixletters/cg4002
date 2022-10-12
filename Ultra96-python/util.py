@@ -33,9 +33,9 @@ def payloadParser(data, playerActionBuffer, IMU_DATA_BUFFER):
     predictionInputs = []
     for data in IMU_DATA_BUFFER:
         predictionInputs += data["payload"]
-    if data["beetleID"] == 0:
-        playerActionBuffer[str(data["playerID"])] = INT_TO_ACTION_ARR[predict(predictionInputs)]
-    elif data["beetleID"] == 1:
+    # if data["beetleID"] == 0:
+    #     playerActionBuffer[str(data["playerID"])] = INT_TO_ACTION_ARR[predict(predictionInputs)]
+    if data["beetleID"] == 1:
         playerActionBuffer[str(data["playerID"])] = "shoot"
     
 
