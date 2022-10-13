@@ -15,11 +15,10 @@ import threading
 import time
 import struct
 import action
+import sys
 import util as util
 
-MYTCP_PORT = 8080
-EVAL_HOST = "127.0.0.1"  # The server's hostname or IP address
-EVAL_PORT = 8090
+MYTCP_PORT = 8080 # The server's hostname or IP address
 BUFFER_LENGTH = 10
 
 ## Encryption intiliazation
@@ -47,7 +46,7 @@ def receiverProcess(dataBuffer, lock):
 
 
 ## Process that takes data from databuffer and sends it to the evaluation server
-def senderProcess(dataBuffer, lock, currGame):
+def senderProcess(dataBuffer, lock, currGame, EVAL_HOST, EVAL_PORT):
 
     ## Flag to dictate which player's action has been set
     playerFlags = {
@@ -61,6 +60,10 @@ def senderProcess(dataBuffer, lock, currGame):
         "2" : None
     }
 
+    predictBuffer = {
+        "1": []
+    }
+
     ## thread pool to put action calculations
     threadPool = []
 
@@ -71,6 +74,7 @@ def senderProcess(dataBuffer, lock, currGame):
     }
     timerCount = 5
     IMU_DATA_BUFFER = []
+    BUFFER_INDEX = 0
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.connect((EVAL_HOST, EVAL_PORT))
         while True:
@@ -88,17 +92,56 @@ def senderProcess(dataBuffer, lock, currGame):
                         playerShotMap[Data["playerID"]] = True
                         continue
 
-                    util.payloadParser(Data, playerActionBuffer, IMU_DATA_BUFFER)
+                    if Data["beetleID"] == 0:
+                        if len(IMU_DATA_BUFFER) < 10:
+                            IMU_DATA_BUFFER.append(Data)
+                            continue
+                        IMU_DATA_BUFFER[BUFFER_INDEX] = Data
+                        BUFFER_INDEX += 1
+                        if BUFFER_INDEX >= 10:
+                            BUFFER_INDEX = 0
+
+                    
+                    util.payloadParser(Data, predictBuffer, IMU_DATA_BUFFER)
+
+                    if Data["beetleID"] == 0 and len(predictBuffer["1"]) < 10:
+                        continue
+
+                    actionCount = {}
+                    highestFREQ = ""
+                    highestCount = 0
+                    for i in predictBuffer["1"]:
+                        if i in actionCount:
+                            actionCount[i] += 1
+                        else:
+                            actionCount[i] = 1
+
+                        if actionCount[i] > highestCount:
+                            highetCount = actionCount[i]
+                            highestFREQ = i
+                    
+                    playerActionBuffer["1"] = highestFREQ
+                    print(predictBuffer)
+                    if playerActionBuffer["1"] == "idle":
+                        IMU_DATA_BUFFER = []
+                        continue
+                    if util.idleChecker(IMU_DATA_BUFFER):
+                        continue
                     currGame.takeAction(getShotMap=playerShotMap, **playerActionBuffer)
                     encoded = util.formatData(currGame.toJson(),key,iv)
                     sock.sendall(encoded)
-                    expectedGameState = sock.recv(2048)
+                    length = b''
+                    i = sock.recv(1)
+                    length += i
+                    while i.decode("utf-8") != '_':
+                        i = sock.recv(1)
+                        if i.decode("utf-8") != '_':
+                            length += i                            
+                    length = int(length.decode("utf-8"))
+                    expectedgamestate = sock.recv(length)
+                    currGame.synchronise(expectedgamestate)
                     for i in playerShotMap:
                         playerShotMap[i] = False
-                    print(expectedGameState)
-                    if len(expectedGameState[4:]) != 0:
-                        currGame.synchronise(expectedGameState[4:])
-
                 else:
                     ## Check playerID of the data
                     currPlayer = Data['playerID']
@@ -114,16 +157,9 @@ def senderProcess(dataBuffer, lock, currGame):
                         continue
                     
                     if Data["beetleID"] == 0:
-                        if len(IMU_DATA_BUFFER) == BUFFER_LENGTH: 
-                            IMU_DATA_BUFFER[BUFFER_INDEX] = Data
-                        else:
-                            IMU_DATA_BUFFER.append(Data)
-
-                        BUFFER_INDEX += 1
-                        if BUFFER_INDEX == BUFFER_LENGTH:
-                            BUFFER_INDEX = 0
+                         IMU_DATA_BUFFER.append(Data)
                     
-                        if len(IMU_DATA_BUFFER) != BUFFER_LENGTH:
+                    if len(IMU_DATA_BUFFER) != BUFFER_LENGTH:
                             continue
                     
                     
@@ -140,6 +176,7 @@ def senderProcess(dataBuffer, lock, currGame):
                 for thread in threadPool:
                     thread.join()
                 
+                IMU_DATA_BUFFER = []
                 continueFlag = False
                 for i in playerActionBuffer:
                     if playerActionBuffer[i] == "idle":
@@ -149,7 +186,6 @@ def senderProcess(dataBuffer, lock, currGame):
                 if continueFlag:
                     continue
 
-                IMU_DATA_BUFFER = []
                 ## we wait for the threads to finish computation
                 for thread in threadPool:
                     thread.join()
@@ -184,12 +220,13 @@ if __name__ == '__main__':
     while num_of_players != 1 and num_of_players != 2:
         print("INVALID NUMBER OF PLAYERS, PLEASE INPUT AGAIN:")
         num_of_players = int(input("Number of players:"))
-
+    EVAL_HOST = sys.argv[0]
+    EVAL_PORT = sys.argv[1]
     dataBuffer = mp.Queue()
     lock = mp.Lock()
     currGame = Game(numberOfPlayers=num_of_players)
     receiver = mp.Process(target=receiverProcess, args=(dataBuffer,lock))
-    sender = mp.Process(target=senderProcess, args=(dataBuffer, lock, currGame))
+    sender = mp.Process(target=senderProcess, args=(dataBuffer, lock, currGame, EVAL_HOST,EVAL_PORT))
     sender.start()
     receiver.start()
     sender.join()

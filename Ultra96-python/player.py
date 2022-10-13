@@ -74,7 +74,7 @@ class player:
         self.getDamaged(10)
     
     def exit(self):
-        print("EXIT")
+        print()
     
     def synchronise(self,**kwargs):
         for key,value in kwargs.items():

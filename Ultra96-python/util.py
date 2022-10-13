@@ -1,41 +1,59 @@
 
+from locale import normalize
 import struct
 from Cryptodome.Cipher import AES
 import base64
 from Cryptodome.Random import get_random_bytes
 from Crypto.Util.Padding import pad
-# import predict
-
+from Ultra96-python.ultra import THRESHOLD
+from predict import predicts
+from pynq import Overlay
+import math
+import pynq.lib.dma
 INT_TO_ACTION_ARR = ["shield", "grenade","reload","exit", "idle"]
 
 ## Predict function to be implemented
 
+overlay = Overlay('/home/xilinx/cg4002/Ultra96-python/fourthProtoModel/design_3_wrapper.bit')
+dma = overlay.axi_dma_0
+
 ## Deserialization of bytestream into a python dictionary
 def deserialize(bytestream):
-    playerID = bytestream[0] - 48
-    beetleID = bytestream[1] - 48
+    playerID = bytestream[0] 
+    beetleID = bytestream[1]
     deserializedData = {
         "playerID" : playerID,
         "beetleID" : beetleID,
     }
-    print(deserializedData)
     if beetleID == 0:
         a1 = struct.unpack('<f', bytestream[2:6])[0]
         a2 =  struct.unpack('<f', bytestream[6:10])[0]
         a3 =  struct.unpack('<f', bytestream[10:14])[0]
         g1 = struct.unpack('<f', bytestream[14:18])[0]
         g2 = struct.unpack('<f', bytestream[18:22])[0]
-        g3 = struct.unpack('<f', bytestream[22:])[0]
+        g3 = struct.unpack('<f', bytestream[22:26])[0]
         deserializedData['payload'] = [a1,a2,a3,g1,g2,g3]
     return deserializedData
 
+def idleChecker(IMU_DATA_BUFFER, THRESHOLD):
+    sum = 0
+    for data in IMU_DATA_BUFFER:
+        sum += (1-data["payload"][0])**2
+    normalize = sum ** 0.5
+    print(normalize)
+    if normalize < THRESHOLD:
+        return True
+    else:
+        return False
 
 def payloadParser(data, playerActionBuffer, IMU_DATA_BUFFER):
     predictionInputs = []
     for data in IMU_DATA_BUFFER:
         predictionInputs += data["payload"]
-    # if data["beetleID"] == 0:
-    #     playerActionBuffer[str(data["playerID"])] = INT_TO_ACTION_ARR[predict(predictionInputs)]
+    if data["beetleID"] == 0:
+         playerActionBuffer[str(data["playerID"])].append(INT_TO_ACTION_ARR[predicts(predictionInputs,dma)])
+         if len(playerActionBuffer[str(data["playerID"])]) > 10:
+            playerActionBuffer[str(data["playerID"])].pop(0)
     if data["beetleID"] == 1:
         playerActionBuffer[str(data["playerID"])] = "shoot"
     
