@@ -18,8 +18,8 @@ class player:
 
     def grenade(self):
         self.action = "grenade"
-        if self.grenade:
-            self.grenade -= 1
+        if self.grenades:
+            self.grenades -= 1
 
     
     def shield_health_counter(self):
@@ -45,6 +45,7 @@ class player:
             self.bullets = 6
 
     def shoot(self):
+        self.action = "shoot"
         if self.bullets > 0:
             self.bullets -= 1
             self.action = "shoot"
